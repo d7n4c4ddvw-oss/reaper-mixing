@@ -58,8 +58,8 @@
 
           <p>
             Agrega la dirección IPv4 de la computadora donde está REAPER.
-            La estación se guardará únicamente en este navegador para que
-            la próxima vez conectes con un toque.
+            La conexión quedará guardada únicamente en este navegador para
+            abrirla rápidamente la próxima vez.
           </p>
 
           <div class="hero-stats">
@@ -97,27 +97,25 @@
             </div>
           </div>
 
-          <span class="radar-label">SAVED LOCAL STATIONS</span>
+          <span class="radar-label">LOCAL SESSION CONNECT</span>
         </div>
       </section>
 
       <section class="content-grid manual-only-grid">
-        <article class="card">
+        <article class="card connect-card">
           <div class="card-title">
             <div>
-              <span class="section-label">CONEXIÓN DIRECTA</span>
+              <span class="section-label">CONEXIÓN MANUAL</span>
               <h2>Agregar estación REAPER</h2>
             </div>
 
-            <div class="port-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M12 2v20"></path>
-                <path d="M5 9l7-7 7 7"></path>
-              </svg>
-
-              :8080
-            </div>
+            <div class="port-badge">:8080</div>
           </div>
+
+          <p class="card-description">
+            Escribe la IPv4 de la PC donde está REAPER. Por ejemplo:
+            <code>192.168.100.79</code>
+          </p>
 
           <div class="connection-flow">
             <div class="manual-form">
@@ -133,7 +131,7 @@
                   <input
                     id="hostInput"
                     type="text"
-                    placeholder="Ejemplo: 192.168.100.79"
+                    placeholder="192.168.100.79"
                     autocomplete="off"
                     spellcheck="false"
                   >
@@ -162,41 +160,35 @@
                 <path d="m13 6 6 6-6 6"></path>
               </svg>
 
-              Guardar y abrir REAPER
+              <span id="connectButtonText">Guardar y abrir REAPER</span>
             </button>
 
-            <div class="scan-note">
+            <div class="connect-progress" id="connectProgress" aria-live="polite">
+              <div class="connect-progress-top">
+                <span id="connectProgressText">
+                  Listo para conectar
+                </span>
+
+                <strong id="connectProgressPercent">0%</strong>
+              </div>
+
+              <div class="connect-progress-track">
+                <div
+                  class="connect-progress-fill"
+                  id="connectProgressFill"
+                ></div>
+              </div>
+            </div>
+
+            <div class="connection-note">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M12 8v4"></path>
                 <path d="M12 16h.01"></path>
               </svg>
 
-              Conecta el teléfono y la PC con REAPER a la misma red Wi‑Fi.
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="steps">
-              <div class="step">
-                <span class="step-number">1</span>
-                <span>En la PC con REAPER abre <code>CMD</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">2</span>
-                <span>Ejecuta <code>ipconfig</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">3</span>
-                <span>Copia la dirección <code>IPv4</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">4</span>
-                <span>Pégala arriba y pulsa <code>Guardar y abrir</code>.</span>
-              </div>
+              La PC con REAPER y este dispositivo deben estar conectados
+              a la misma red Wi‑Fi.
             </div>
           </div>
         </article>
@@ -204,14 +196,14 @@
         <article class="card saved-card">
           <div class="card-title">
             <div>
-              <span class="section-label">ESTE DISPOSITIVO</span>
-              <h2>Estaciones guardadas</h2>
+              <span class="section-label">EN ESTE DISPOSITIVO</span>
+              <h2>Sesiones guardadas</h2>
             </div>
           </div>
 
           <p class="saved-description">
-            Estas direcciones solo se guardan en este navegador y este
-            dispositivo. Otro celular tendrá su propia lista.
+            Las estaciones se guardan localmente en este navegador.
+            Otro celular tendrá su propia lista.
           </p>
 
           <div class="saved-list saved-list-large" id="savedList">
@@ -222,15 +214,7 @@
               </svg>
 
               <span>
-                Todavía no hay estaciones guardadas.
-              </span>
-            </div>
-          </div>
-
-          <div class="results manual-results" id="results">
-            <div class="empty-state">
-              <span>
-                Agrega una estación para abrir REAPER.
+                Todavía no hay sesiones guardadas.
               </span>
             </div>
           </div>

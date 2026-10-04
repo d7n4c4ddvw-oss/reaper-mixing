@@ -1,35 +1,35 @@
 const DEFAULT_REAPER_PORT = 8080;
 const STORAGE_KEY = "multitracks-remote-reaper-hosts";
 
-const searchBtn = document.getElementById("searchBtn");
-const searchText = document.getElementById("searchText");
-const results = document.getElementById("results");
-
-const networkPrefixInput = document.getElementById(
-  "networkPrefixInput"
-);
-
 const hostInput = document.getElementById("hostInput");
 const portInput = document.getElementById("portInput");
+
 const connectBtn = document.getElementById("connectBtn");
+const connectButtonText = document.getElementById(
+  "connectButtonText"
+);
+
+const connectProgress = document.getElementById(
+  "connectProgress"
+);
+
+const connectProgressText = document.getElementById(
+  "connectProgressText"
+);
+
+const connectProgressPercent = document.getElementById(
+  "connectProgressPercent"
+);
+
+const connectProgressFill = document.getElementById(
+  "connectProgressFill"
+);
+
 const savedList = document.getElementById("savedList");
 
+let progressTimer = null;
+
 const icons = {
-  workstation: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="4" width="18" height="13" rx="2"></rect>
-      <path d="M8 21h8"></path>
-      <path d="M12 17v4"></path>
-    </svg>
-  `,
-
-  connect: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-      <path d="M5 12h13"></path>
-      <path d="m13 6 6 6-6 6"></path>
-    </svg>
-  `,
-
   check: `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
       <path d="m5 12 4 4L19 6"></path>
@@ -46,18 +46,11 @@ const icons = {
     </svg>
   `,
 
-  clock: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <circle cx="12" cy="12" r="8"></circle>
-      <path d="M12 8v4l3 2"></path>
-    </svg>
-  `,
-
-  alert: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-      <circle cx="12" cy="12" r="9"></circle>
-      <path d="M12 8v4"></path>
-      <path d="M12 16h.01"></path>
+  workstation: `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="13" rx="2"></rect>
+      <path d="M8 21h8"></path>
+      <path d="M12 17v4"></path>
     </svg>
   `
 };
@@ -94,32 +87,26 @@ function normalizePort(value) {
   return port;
 }
 
-function validNetworkPrefix(value) {
-  const prefix = String(value || "")
-    .trim()
-    .replace(/\.$/, "");
+function validIPv4(host) {
+  const parts = String(host).split(".");
 
-  return (
-    /^192\.168\.\d{1,3}$/.test(prefix) ||
-    /^10\.\d{1,3}\.\d{1,3}$/.test(prefix) ||
-    /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}$/.test(prefix)
-  );
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  return parts.every(part => {
+    if (!/^\d{1,3}$/.test(part)) {
+      return false;
+    }
+
+    const number = Number(part);
+
+    return number >= 0 && number <= 255;
+  });
 }
 
 function buildReaperUrl(host, port) {
-  const cleanHost = normalizeHost(host);
-  const cleanPort = normalizePort(port);
-
-  return `http://${cleanHost}:${cleanPort}`;
-}
-
-function showMessage(message, icon = icons.clock) {
-  results.innerHTML = `
-    <div class="empty-state">
-      ${icon}
-      <span>${message}</span>
-    </div>
-  `;
+  return `http://${normalizeHost(host)}:${normalizePort(port)}`;
 }
 
 function getStations() {
@@ -153,10 +140,6 @@ function saveStation(host, port) {
   const cleanHost = normalizeHost(host);
   const cleanPort = normalizePort(port);
 
-  if (!cleanHost) {
-    return;
-  }
-
   const stationId = `${cleanHost}:${cleanPort}`;
 
   const stations = getStations()
@@ -170,7 +153,7 @@ function saveStation(host, port) {
     lastUsed: Date.now()
   });
 
-  setStations(stations.slice(0, 8));
+  setStations(stations.slice(0, 10));
 
   renderSavedStations();
 }
@@ -190,14 +173,100 @@ function deleteStation(host, port) {
   renderSavedStations();
 }
 
+function setProgress(percent, message) {
+  const safePercent = Math.max(
+    0,
+    Math.min(100, Math.round(percent))
+  );
+
+  connectProgress.classList.add("active");
+
+  connectProgressFill.style.width = `${safePercent}%`;
+
+  connectProgressPercent.textContent =
+    `${safePercent}%`;
+
+  connectProgressText.textContent = message;
+}
+
+function resetProgress() {
+  window.clearInterval(progressTimer);
+
+  progressTimer = null;
+
+  connectProgress.classList.remove("active");
+
+  connectProgressFill.style.width = "0%";
+
+  connectProgressPercent.textContent = "0%";
+
+  connectProgressText.textContent =
+    "Listo para conectar";
+}
+
+function runOpenProgress(onComplete) {
+  window.clearInterval(progressTimer);
+
+  let progress = 0;
+
+  setProgress(
+    progress,
+    "Guardando estación en este dispositivo…"
+  );
+
+  progressTimer = window.setInterval(() => {
+    progress += 8;
+
+    if (progress < 35) {
+      setProgress(
+        progress,
+        "Guardando estación en este dispositivo…"
+      );
+
+      return;
+    }
+
+    if (progress < 70) {
+      setProgress(
+        progress,
+        "Preparando Web Interface de REAPER…"
+      );
+
+      return;
+    }
+
+    if (progress < 100) {
+      setProgress(
+        progress,
+        "Abriendo conexión local…"
+      );
+
+      return;
+    }
+
+    window.clearInterval(progressTimer);
+
+    setProgress(
+      100,
+      "REAPER listo. Abriendo…"
+    );
+
+    window.setTimeout(onComplete, 250);
+  }, 85);
+}
+
 function renderSavedStations() {
   const stations = getStations();
 
   if (!stations.length) {
     savedList.innerHTML = `
-      <span class="saved-empty">
-        Todavía no hay estaciones guardadas en este dispositivo.
-      </span>
+      <div class="empty-state">
+        ${icons.workstation}
+
+        <span>
+          Todavía no hay sesiones guardadas en este dispositivo.
+        </span>
+      </div>
     `;
 
     return;
@@ -224,7 +293,7 @@ function renderSavedStations() {
         type="button"
         data-delete-host="${escapeHTML(station.host)}"
         data-delete-port="${station.port}"
-        title="Quitar esta estación"
+        title="Eliminar estación guardada"
       >
         ${icons.trash}
       </button>
@@ -235,13 +304,13 @@ function renderSavedStations() {
     .querySelectorAll(".saved-station-connect")
     .forEach(button => {
       button.addEventListener("click", () => {
-        const host = button.dataset.host;
-        const port = Number(button.dataset.port);
+        hostInput.value = button.dataset.host;
+        portInput.value = button.dataset.port;
 
-        hostInput.value = host;
-        portInput.value = port;
-
-        openReaper(host, port);
+        openReaper(
+          button.dataset.host,
+          button.dataset.port
+        );
       });
     });
 
@@ -259,110 +328,48 @@ function renderSavedStations() {
     });
 }
 
-function showStationReady(host, port, message) {
-  const cleanHost = normalizeHost(host);
-  const cleanPort = normalizePort(port);
-
-  results.innerHTML = `
-    <article class="server-card">
-      <div class="server-icon">
-        ${icons.workstation}
-      </div>
-
-      <div class="server-info">
-        <strong>${escapeHTML(message)}</strong>
-        <small>${escapeHTML(cleanHost)}:${cleanPort}</small>
-      </div>
-
-      <button
-        class="connect-button"
-        id="openFoundStationBtn"
-        type="button"
-      >
-        ${icons.connect}
-        Abrir
-      </button>
-    </article>
-  `;
-
-  document
-    .getElementById("openFoundStationBtn")
-    .addEventListener("click", () => {
-      openReaper(cleanHost, cleanPort);
-    });
-}
-
-function prepareNetworkPrefix() {
-  const prefix = String(networkPrefixInput.value || "")
-    .trim()
-    .replace(/\.$/, "");
-
-  if (!validNetworkPrefix(prefix)) {
-    showMessage(
-      "Escribe los tres primeros bloques de tu red. Ejemplo: 192.168.100",
-      icons.alert
-    );
-
-    networkPrefixInput.focus();
-
-    return;
-  }
-
-  hostInput.value = `${prefix}.`;
-  hostInput.focus();
-
-  searchText.textContent = "IP preparada";
-
-  showMessage(
-    `Completa el último número de la IPv4 de tu PC. Ejemplo: ${escapeHTML(prefix)}.79`,
-    icons.clock
-  );
-
-  setTimeout(() => {
-    searchText.textContent = "Usar esta red";
-  }, 1500);
-}
-
 function openReaper(host, port) {
   const cleanHost = normalizeHost(host);
   const cleanPort = normalizePort(port);
 
-  if (!cleanHost || cleanHost.endsWith(".")) {
+  if (!cleanHost) {
     hostInput.focus();
 
-    showMessage(
-      "Completa la dirección IPv4 de tu PC. Ejemplo: 192.168.100.79",
-      icons.alert
+    setProgress(
+      0,
+      "Escribe la dirección IPv4 de la PC."
     );
 
     return;
   }
 
-  saveStation(cleanHost, cleanPort);
+  if (!validIPv4(cleanHost)) {
+    hostInput.focus();
 
-  showStationReady(
+    setProgress(
+      0,
+      "La IPv4 no es válida. Ejemplo: 192.168.100.79"
+    );
+
+    return;
+  }
+
+  const reaperUrl = buildReaperUrl(
     cleanHost,
-    cleanPort,
-    "Abriendo REAPER…"
+    cleanPort
   );
 
-  /*
-    Esto abre directamente la Web Interface de REAPER.
-    Tu navegador puede navegar a esa IP local aunque
-    la página principal esté publicada en GitHub Pages.
-  */
-  window.setTimeout(() => {
-    window.location.href = buildReaperUrl(
-      cleanHost,
-      cleanPort
-    );
-  }, 250);
-}
+  connectBtn.disabled = true;
 
-searchBtn.addEventListener(
-  "click",
-  prepareNetworkPrefix
-);
+  connectButtonText.textContent =
+    "Conectando…";
+
+  saveStation(cleanHost, cleanPort);
+
+  runOpenProgress(() => {
+    window.location.href = reaperUrl;
+  });
+}
 
 connectBtn.addEventListener("click", () => {
   openReaper(
@@ -389,10 +396,15 @@ portInput.addEventListener("keydown", event => {
   }
 });
 
-networkPrefixInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    prepareNetworkPrefix();
-  }
+window.addEventListener("pageshow", () => {
+  connectBtn.disabled = false;
+
+  connectButtonText.textContent =
+    "Guardar y abrir REAPER";
+
+  resetProgress();
+
+  renderSavedStations();
 });
 
 window.addEventListener("load", () => {
@@ -400,8 +412,5 @@ window.addEventListener("load", () => {
 
   renderSavedStations();
 
-  showMessage(
-    "Agrega la dirección IPv4 de REAPER una vez. Quedará guardada solo en este dispositivo.",
-    icons.clock
-  );
+  resetProgress();
 });
