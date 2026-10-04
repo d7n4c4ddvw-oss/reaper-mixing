@@ -48,8 +48,8 @@
       </header>
 
       <section class="hero">
-        <div class="hero-content">
-          <div class="eyebrow">CONTROL DE SESIÓN</div>
+        <div class="hero-copy">
+          <span class="eyebrow">CONTROL DE SESIÓN</span>
 
           <h1>
             Conecta tu <span>sesión</span><br>
@@ -57,181 +57,146 @@
           </h1>
 
           <p>
-            Agrega la dirección IPv4 de la computadora donde está REAPER.
-            La estación se guardará únicamente en este navegador para que
-            la próxima vez conectes con un toque.
+            Agrega manualmente la dirección IPv4 de la computadora donde
+            está REAPER. La estación se guardará solo en este navegador
+            para que puedas abrirla rápidamente la próxima vez.
           </p>
 
-          <div class="hero-stats">
-            <div class="hero-stat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 7 9 18l-5-5"></path>
-              </svg>
-
-              Control por Wi‑Fi
-            </div>
-
-            <div class="hero-stat">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-                <path d="M8 21h8"></path>
-              </svg>
-
-              REAPER Web Interface
-            </div>
+          <div class="hero-tags">
+            <span>✓ Control por Wi‑Fi</span>
+            <span>▣ REAPER Web Interface</span>
           </div>
         </div>
 
-        <div class="radar-card">
-          <div class="radar">
-            <div class="radar-sweep"></div>
-            <span class="radar-dot one"></span>
-            <span class="radar-dot two"></span>
-            <span class="radar-dot three"></span>
+        <div class="hero-icon">
+          <div class="hero-rings"></div>
 
-            <div class="radar-center">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <rect x="3" y="4" width="18" height="13" rx="2"></rect>
-                <path d="M8 21h8"></path>
-              </svg>
-            </div>
-          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+            <rect x="3" y="4" width="18" height="13" rx="2"></rect>
+            <path d="M8 21h8"></path>
+          </svg>
 
-          <span class="radar-label">SAVED LOCAL STATIONS</span>
+          <small>LOCAL SESSION</small>
         </div>
       </section>
 
-      <section class="content-grid manual-only-grid">
+      <section class="content-grid">
         <article class="card">
-          <div class="card-title">
+          <div class="card-header">
             <div>
-              <span class="section-label">CONEXIÓN DIRECTA</span>
+              <span class="section-label">CONEXIÓN MANUAL</span>
               <h2>Agregar estación REAPER</h2>
             </div>
 
-            <div class="port-badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M12 2v20"></path>
-                <path d="M5 9l7-7 7 7"></path>
-              </svg>
-
-              :8080
-            </div>
+            <span class="port-badge">:8080</span>
           </div>
 
-          <div class="connection-flow">
-            <div class="manual-form">
-              <label class="field">
-                <span>Dirección IPv4 de la PC</span>
+          <p class="description">
+            Escribe la dirección IPv4 de la PC donde está REAPER.
+            Por ejemplo: <code>192.168.100.79</code>
+          </p>
 
-                <div class="input-wrap">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <rect x="3" y="4" width="18" height="13" rx="2"></rect>
-                    <path d="M8 21h8"></path>
-                  </svg>
+          <div class="form-grid">
+            <label class="field">
+              <span>Dirección IPv4 de la PC</span>
 
-                  <input
-                    id="hostInput"
-                    type="text"
-                    placeholder="Ejemplo: 192.168.100.79"
-                    autocomplete="off"
-                    spellcheck="false"
-                  >
-                </div>
-              </label>
+              <div class="input-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="4" width="18" height="13" rx="2"></rect>
+                  <path d="M8 21h8"></path>
+                </svg>
 
-              <label class="field port">
-                <span>Puerto</span>
+                <input
+                  id="hostInput"
+                  type="text"
+                  placeholder="192.168.100.79"
+                  autocomplete="off"
+                  autocapitalize="off"
+                  spellcheck="false"
+                >
+              </div>
+            </label>
 
-                <div class="input-wrap">
-                  <input
-                    id="portInput"
-                    type="number"
-                    value="8080"
-                    min="1"
-                    max="65535"
-                    inputmode="numeric"
-                  >
-                </div>
-              </label>
+            <label class="field port-field">
+              <span>Puerto</span>
+
+              <div class="input-wrap">
+                <input
+                  id="portInput"
+                  type="number"
+                  value="8080"
+                  min="1"
+                  max="65535"
+                  inputmode="numeric"
+                >
+              </div>
+            </label>
+          </div>
+
+          <button id="connectBtn" class="primary-button" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+              <path d="M5 12h13"></path>
+              <path d="m13 6 6 6-6 6"></path>
+            </svg>
+
+            <span id="connectButtonText">Guardar y abrir REAPER</span>
+          </button>
+
+          <div class="connection-status" id="connectionStatus" aria-live="polite">
+            <span class="status-dot"></span>
+            <span id="connectionStatusText">Listo para conectar</span>
+          </div>
+
+          <div class="notice">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 8v4"></path>
+              <path d="M12 16h.01"></path>
+            </svg>
+
+            La PC con REAPER y este dispositivo deben estar conectados
+            a la misma red Wi‑Fi.
+          </div>
+
+          <div class="how-to">
+            <div>
+              <b>1</b>
+              <span>En la PC con REAPER abre <code>CMD</code></span>
             </div>
 
-            <button id="connectBtn" class="connect-manual" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
-                <path d="M5 12h13"></path>
-                <path d="m13 6 6 6-6 6"></path>
-              </svg>
-
-              Guardar y abrir REAPER
-            </button>
-
-            <div class="scan-note">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-                <circle cx="12" cy="12" r="9"></circle>
-                <path d="M12 8v4"></path>
-                <path d="M12 16h.01"></path>
-              </svg>
-
-              Conecta el teléfono y la PC con REAPER a la misma red Wi‑Fi.
+            <div>
+              <b>2</b>
+              <span>Ejecuta <code>ipconfig</code></span>
             </div>
 
-            <div class="divider"></div>
-
-            <div class="steps">
-              <div class="step">
-                <span class="step-number">1</span>
-                <span>En la PC con REAPER abre <code>CMD</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">2</span>
-                <span>Ejecuta <code>ipconfig</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">3</span>
-                <span>Copia la dirección <code>IPv4</code>.</span>
-              </div>
-
-              <div class="step">
-                <span class="step-number">4</span>
-                <span>Pégala arriba y pulsa <code>Guardar y abrir</code>.</span>
-              </div>
+            <div>
+              <b>3</b>
+              <span>Copia la dirección <code>IPv4</code></span>
             </div>
           </div>
         </article>
 
-        <article class="card saved-card">
-          <div class="card-title">
+        <article class="card">
+          <div class="card-header">
             <div>
-              <span class="section-label">ESTE DISPOSITIVO</span>
-              <h2>Estaciones guardadas</h2>
+              <span class="section-label">EN ESTE DISPOSITIVO</span>
+              <h2>Sesiones guardadas</h2>
             </div>
           </div>
 
-          <p class="saved-description">
-            Estas direcciones solo se guardan en este navegador y este
-            dispositivo. Otro celular tendrá su propia lista.
+          <p class="description">
+            Las conexiones se guardan localmente en este navegador.
+            Otro celular tendrá su propia lista.
           </p>
 
-          <div class="saved-list saved-list-large" id="savedList">
+          <div class="saved-list" id="savedList">
             <div class="empty-state">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                <circle cx="12" cy="12" r="8"></circle>
-                <path d="M12 8v4l3 2"></path>
+                <rect x="3" y="4" width="18" height="13" rx="2"></rect>
+                <path d="M8 21h8"></path>
               </svg>
 
-              <span>
-                Todavía no hay estaciones guardadas.
-              </span>
-            </div>
-          </div>
-
-          <div class="results manual-results" id="results">
-            <div class="empty-state">
-              <span>
-                Agrega una estación para abrir REAPER.
-              </span>
+              <span>Todavía no hay sesiones guardadas.</span>
             </div>
           </div>
         </article>
