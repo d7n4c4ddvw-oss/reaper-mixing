@@ -937,48 +937,54 @@ code {
   line-height: 1.5;
 }
 
-.connect-status {
-  min-height: 42px;
+.connect-progress {
+  display: grid;
+  gap: 7px;
+  padding: 10px 11px;
+  border: 1px solid rgba(67, 217, 255, .15);
+  border-radius: 10px;
+  background: rgba(67, 217, 255, .035);
+  opacity: .72;
+  transition: border-color .2s ease, opacity .2s ease;
+}
+
+.connect-progress.active {
+  border-color: rgba(67, 217, 255, .45);
+  opacity: 1;
+}
+
+.connect-progress-top {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--muted);
-  background: rgba(67, 217, 255, .035);
-  font-size: 11px;
-  font-weight: 750;
+  font-size: 10px;
+  font-weight: 800;
 }
 
-.connect-status-dot {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: #6d8192;
+.connect-progress-top strong {
+  color: var(--cyan);
+  font: 900 10px Consolas, monospace;
 }
 
-.connect-status.active {
-  color: #d5f6ff;
-  border-color: rgba(67, 217, 255, .42);
-  background: rgba(67, 217, 255, .08);
+.connect-progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #06101a;
 }
 
-.connect-status.active .connect-status-dot {
-  background: var(--cyan);
-  box-shadow: 0 0 13px var(--cyan);
-  animation: statusPulse .85s ease-in-out infinite alternate;
-}
-
-@keyframes statusPulse {
-  from {
-    transform: scale(.75);
-    opacity: .6;
-  }
-
-  to {
-    transform: scale(1.12);
-    opacity: 1;
-  }
+.connect-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    #168db5,
+    var(--cyan),
+    var(--green)
+  );
+  box-shadow: 0 0 13px rgba(67, 217, 255, .6);
+  transition: width .12s ease;
 }
