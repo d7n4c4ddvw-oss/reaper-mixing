@@ -2,10 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
   >
+
   <meta name="theme-color" content="#080d14">
 
   <title>Multitracks Connect</title>
@@ -55,8 +57,8 @@
           </h1>
 
           <p>
-            Conecta tu computadora mediante Wi‑Fi local y controla tus
-            multitracks desde tu teléfono, tablet o cualquier navegador.
+            Busca la computadora que tiene REAPER dentro de tu Wi‑Fi local.
+            Luego conecta el mixer remoto mediante su dirección IPv4.
           </p>
 
           <div class="hero-stats">
@@ -116,6 +118,27 @@
             </div>
           </div>
 
+          <label class="field network-prefix-field">
+            <span>Prefijo de tu red local</span>
+
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                <path d="M8.5 16a6 6 0 0 1 7 0"></path>
+                <path d="M12 20h.01"></path>
+              </svg>
+
+              <input
+                id="networkPrefixInput"
+                type="text"
+                value="192.168.100"
+                placeholder="Ejemplo: 192.168.1"
+                autocomplete="off"
+                spellcheck="false"
+              >
+            </div>
+          </label>
+
           <button class="scan-button" id="searchBtn" type="button">
             <svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="6"></circle>
@@ -123,7 +146,10 @@
             </svg>
 
             <span class="spinner"></span>
-            <span id="searchText">Buscar REAPER en la red local</span>
+
+            <span id="searchText">
+              Buscar REAPER en la red local
+            </span>
           </button>
 
           <div class="scan-note">
@@ -133,7 +159,8 @@
               <path d="M12 16h.01"></path>
             </svg>
 
-            Para mayor precisión, escribe la IPv4 de tu PC en la conexión directa.
+            El celular y la PC con REAPER deben usar la misma Wi‑Fi.
+            Si Chrome pregunta por red local, pulsa Permitir.
           </div>
 
           <div class="results" id="results">
@@ -144,7 +171,7 @@
               </svg>
 
               <span>
-                Pulsa buscar o escribe la dirección IPv4 de tu PC.
+                Escribe el prefijo de tu red y pulsa Buscar.
               </span>
             </div>
           </div>
@@ -172,7 +199,7 @@
                   <input
                     id="hostInput"
                     type="text"
-                    placeholder="192.168.1.20"
+                    placeholder="192.168.100.79"
                     autocomplete="off"
                     spellcheck="false"
                   >
@@ -225,7 +252,12 @@
 
             <div class="saved-section">
               <div class="saved-title">ESTACIONES RECIENTES</div>
-              <div class="saved-list" id="savedList"></div>
+
+              <div class="saved-list" id="savedList">
+                <span class="saved-empty">
+                  Todavía no hay estaciones guardadas.
+                </span>
+              </div>
             </div>
           </div>
         </article>

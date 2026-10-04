@@ -1,10 +1,14 @@
 const DEFAULT_REAPER_PORT = 8080;
-const REAPER_MIXER_PAGE = "/mix.html";
+const MIXER_PAGE = "mix.html";
 const STORAGE_KEY = "multitracks-remote-reaper-hosts";
 
 const searchBtn = document.getElementById("searchBtn");
 const searchText = document.getElementById("searchText");
 const results = document.getElementById("results");
+
+const networkPrefixInput = document.getElementById(
+  "networkPrefixInput"
+);
 
 const hostInput = document.getElementById("hostInput");
 const portInput = document.getElementById("portInput");
@@ -52,18 +56,15 @@ const icons = {
 
   network: `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-      <rect x="3" y="4" width="18" height="13" rx="2"></rect>
-      <path d="M8 21h8"></path>
-      <path d="M12 17v4"></path>
-      <path d="M7 10h.01"></path>
-      <path d="M12 10h.01"></path>
-      <path d="M17 10h.01"></path>
+      <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+      <path d="M8.5 16a6 6 0 0 1 7 0"></path>
+      <path d="M12 20h.01"></path>
     </svg>
   `
 };
 
 function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
@@ -83,19 +84,43 @@ function normalizeHost(value) {
 function validPort(value) {
   const port = Number(value);
 
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  if (
+    !Number.isInteger(port) ||
+    port < 1 ||
+    port > 65535
+  ) {
     return DEFAULT_REAPER_PORT;
   }
 
   return port;
 }
 
-function getBaseUrl(host, port) {
-  return `http://${host}:${port}`;
+function validPrefix(value) {
+  const prefix = String(value || "")
+    .trim()
+    .replace(/\.$/, "");
+
+  const isPrivate192 =
+    /^192\.168\.\d{1,3}$/.test(prefix);
+
+  const isPrivate10 =
+    /^10\.\d{1,3}\.\d{1,3}$/.test(prefix);
+
+  const isPrivate172 =
+    /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}$/.test(prefix);
+
+  return isPrivate192 || isPrivate10 || isPrivate172;
 }
 
-function getMixerUrl(host, port) {
-  return `${getBaseUrl(host, port)}${REAPER_MIXER_PAGE}`;
+function getBaseUrl(host, port) {
+  return `http://${normalizeHost(host)}:${validPort(port)}`;
+}
+
+function getReaperUrl(host, port) {
+  const cleanHost = normalizeHost(host);
+  const cleanPort = validPort(port);
+
+  return `http://${cleanHost}:${cleanPort}`;
 }
 
 function showEmpty(message, icon = icons.clock) {
@@ -107,9 +132,29 @@ function showEmpty(message, icon = icons.clock) {
   `;
 }
 
+function showProgress(current, total, prefix) {
+  const percent = Math.round((current / total) * 100);
+
+  results.innerHTML = `
+    <div class="scan-progress">
+      <strong>Buscando REAPER en ${escapeHTML(prefix)}.x</strong>
+
+      <span>
+        Revisando ${current} de ${total} direcciones…
+      </span>
+
+      <div class="scan-progress-bar">
+        <i style="width:${percent}%"></i>
+      </div>
+    </div>
+  `;
+}
+
 function getSavedServers() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    const saved = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || "[]"
+    );
 
     if (!Array.isArray(saved)) {
       return [];
@@ -133,10 +178,12 @@ function saveServer(host, port) {
     return;
   }
 
-  const key = `${cleanHost}:${cleanPort}`;
+  const serverKey = `${cleanHost}:${cleanPort}`;
 
   const updated = getSavedServers()
-    .filter(server => `${server.host}:${server.port}` !== key);
+    .filter(server => {
+      return `${server.host}:${server.port}` !== serverKey;
+    });
 
   updated.unshift({
     host: cleanHost,
@@ -156,7 +203,12 @@ function renderSavedServers() {
   const saved = getSavedServers();
 
   if (!saved.length) {
-    savedList.innerHTML = "";
+    savedList.innerHTML = `
+      <span class="saved-empty">
+        Todavía no hay estaciones guardadas.
+      </span>
+    `;
+
     return;
   }
 
@@ -185,20 +237,15 @@ function renderSavedServers() {
   });
 }
 
-function renderServer(host, port, label = "Estación REAPER disponible") {
+function renderServer(host, port, label = "REAPER encontrado") {
   const cleanHost = normalizeHost(host);
   const cleanPort = validPort(port);
-
-  if (!cleanHost) {
-    return;
-  }
 
   results.innerHTML = "";
 
   const item = document.createElement("article");
 
   item.className = "server-card";
-  item.dataset.server = `${cleanHost}:${cleanPort}`;
 
   item.innerHTML = `
     <div class="server-icon">
@@ -216,77 +263,65 @@ function renderServer(host, port, label = "Estación REAPER disponible") {
     </button>
   `;
 
-  item.querySelector(".connect-button").addEventListener("click", () => {
-    connect(cleanHost, cleanPort);
-  });
+  item.querySelector(".connect-button")
+    .addEventListener("click", () => {
+      connect(cleanHost, cleanPort);
+    });
 
   results.appendChild(item);
 }
 
 /*
-  Prueba si existe un servidor HTTP en el host y puerto indicado.
+  La forma más útil de detectar REAPER:
 
-  El navegador no puede asegurar que sea REAPER por CORS,
-  pero sí puede indicar que el host respondió por HTTP.
+  Intentamos cargar /main.js de REAPER.
+  Si carga, esa IP está exponiendo la Web Interface.
+
+  No usamos fetch no-cors porque puede responder opaque
+  incluso en servidores que no son REAPER.
 */
-async function probe(host, port, timeout = 1800) {
-  const controller = new AbortController();
+function probeReaper(host, port, timeoutMs = 750) {
+  return new Promise(resolve => {
+    const script = document.createElement("script");
+    const url =
+      `${getBaseUrl(host, port)}/main.js?scan=${Date.now()}`;
 
-  const timeoutId = window.setTimeout(() => {
-    controller.abort();
-  }, timeout);
+    let finished = false;
 
-  try {
-    await fetch(`${getBaseUrl(host, port)}/`, {
-      method: "GET",
-      mode: "no-cors",
-      cache: "no-store",
-      signal: controller.signal
-    });
+    function finish(found) {
+      if (finished) {
+        return;
+      }
 
-    return true;
-  } catch {
-    return false;
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
-}
+      finished = true;
 
-/*
-  Solo prueba direcciones útiles.
-  No escanea decenas de IPs y por eso no llena la pantalla
-  de falsos resultados.
-*/
-function candidateHosts() {
-  const hosts = [];
+      clearTimeout(timer);
 
-  const typedHost = normalizeHost(hostInput.value);
-  const currentHost = location.hostname;
+      script.onload = null;
+      script.onerror = null;
 
-  /*
-    Primero prueba la IP que escribió el usuario.
-  */
-  if (typedHost) {
-    hosts.push(typedHost);
-  }
+      script.remove();
 
-  /*
-    Si la web fue abierta desde una IP de LAN, también la prueba.
-  */
-  if (
-    currentHost &&
-    currentHost !== "localhost" &&
-    currentHost !== "127.0.0.1"
-  ) {
-    hosts.push(currentHost);
-  }
+      resolve(found);
+    }
 
-  /*
-    Solo para probar desde la misma PC.
-  */
-  hosts.push("localhost", "127.0.0.1");
+    const timer = window.setTimeout(() => {
+      finish(false);
+    }, timeoutMs);
 
-  return [...new Set(hosts)];
+    script.async = true;
+    script.src = url;
+
+    script.onload = () => {
+      finish(true);
+    };
+
+    script.onerror = () => {
+      finish(false);
+    };
+
+    document.head.appendChild(script);
+  });
 }
 
 async function searchLocalNetwork() {
@@ -294,60 +329,103 @@ async function searchLocalNetwork() {
     return;
   }
 
-  isSearching = true;
+  const prefix = String(networkPrefixInput.value || "")
+    .trim()
+    .replace(/\.$/, "");
 
-  const port = validPort(portInput.value);
-  const hosts = candidateHosts();
-
-  searchBtn.disabled = true;
-  searchBtn.classList.add("loading");
-  searchText.textContent = "Verificando estación REAPER…";
-
-  showEmpty(
-    "Comprobando las direcciones disponibles…",
-    icons.clock
-  );
-
-  let foundHost = null;
-
-  for (const host of hosts) {
-    searchText.textContent = `Verificando ${host}:${port}…`;
-
-    const online = await probe(host, port);
-
-    if (online) {
-      foundHost = host;
-      break;
-    }
-  }
-
-  isSearching = false;
-
-  searchBtn.disabled = false;
-  searchBtn.classList.remove("loading");
-  searchText.textContent = "Buscar REAPER en la red local";
-
-  if (!foundHost) {
+  if (!validPrefix(prefix)) {
     showEmpty(
-      "No se encontró REAPER automáticamente.<br>" +
-      "Escribe la dirección IPv4 de tu PC y pulsa conectar.",
+      "Escribe los primeros tres bloques de tu red. Ejemplo: 192.168.100",
       icons.alert
     );
+
+    networkPrefixInput.focus();
 
     return;
   }
 
-  const isLocal =
-    foundHost === "localhost" ||
-    foundHost === "127.0.0.1";
+  const port = validPort(portInput.value);
 
-  renderServer(
-    foundHost,
-    port,
-    isLocal
-      ? "REAPER local en este PC"
-      : "Estación REAPER disponible"
-  );
+  isSearching = true;
+
+  searchBtn.disabled = true;
+  searchBtn.classList.add("loading");
+
+  searchText.textContent = "Buscando REAPER…";
+
+  const hosts = [];
+
+  for (let lastNumber = 2; lastNumber <= 254; lastNumber += 1) {
+    hosts.push(`${prefix}.${lastNumber}`);
+  }
+
+  let foundHost = "";
+
+  try {
+    /*
+      Busca 12 IPs al mismo tiempo.
+      Esto es más rápido, pero no satura el celular.
+    */
+    const batchSize = 12;
+
+    for (
+      let start = 0;
+      start < hosts.length;
+      start += batchSize
+    ) {
+      const batch = hosts.slice(start, start + batchSize);
+
+      const progress =
+        Math.min(start + batch.length, hosts.length);
+
+      showProgress(progress, hosts.length, prefix);
+
+      const batchResults = await Promise.all(
+        batch.map(host => probeReaper(host, port))
+      );
+
+      const foundIndex = batchResults.findIndex(Boolean);
+
+      if (foundIndex !== -1) {
+        foundHost = batch[foundIndex];
+        break;
+      }
+    }
+
+    if (!foundHost) {
+      showEmpty(
+        "No encontré REAPER automáticamente.<br>" +
+        "Verifica que el celular y la PC estén en la misma Wi‑Fi, REAPER esté abierto y la Web Interface use el puerto 8080.",
+        icons.alert
+      );
+
+      return;
+    }
+
+    hostInput.value = foundHost;
+    portInput.value = port;
+
+    renderServer(
+      foundHost,
+      port,
+      "Estación REAPER encontrada"
+    );
+  } catch (error) {
+    console.error(error);
+
+    showEmpty(
+      "Chrome bloqueó la búsqueda en red local. Si aparece un aviso de permiso de red, selecciona Permitir. También puedes usar la conexión manual.",
+      icons.alert
+    );
+  } finally {
+    isSearching = false;
+
+    searchBtn.disabled = false;
+    searchBtn.classList.remove("loading");
+
+    searchText.textContent =
+      "Buscar REAPER en la red local";
+  }
 }
 
 async function connect(host, port) {
@@ -358,8 +436,7 @@ async function connect(host, port) {
     hostInput.focus();
 
     showEmpty(
-      "Escribe la dirección IPv4 de tu PC.<br>" +
-      "Ejemplo: 192.168.1.20",
+      "Escribe la dirección IPv4 de tu PC. Ejemplo: 192.168.100.79",
       icons.alert
     );
 
@@ -369,6 +446,7 @@ async function connect(host, port) {
   const originalButton = connectBtn.innerHTML;
 
   connectBtn.disabled = true;
+
   connectBtn.innerHTML = `
     ${icons.clock}
     Verificando conexión…
@@ -379,15 +457,19 @@ async function connect(host, port) {
     icons.network
   );
 
-  const online = await probe(cleanHost, cleanPort, 2300);
+  const available = await probeReaper(
+    cleanHost,
+    cleanPort,
+    2500
+  );
 
   connectBtn.disabled = false;
   connectBtn.innerHTML = originalButton;
 
-  if (!online) {
+  if (!available) {
     showEmpty(
-      `No respondió <strong>${escapeHTML(cleanHost)}:${cleanPort}</strong>.<br>` +
-      "Revisa la IP, el puerto 8080, el Wi‑Fi y el Firewall de Windows.",
+      `No respondió ${escapeHTML(cleanHost)}:${cleanPort}.<br>` +
+      "Revisa IP, Wi‑Fi, Firewall de Windows, REAPER y puerto 8080.",
       icons.alert
     );
 
@@ -399,18 +481,17 @@ async function connect(host, port) {
   renderServer(
     cleanHost,
     cleanPort,
-    "REAPER listo para conectar"
+    "REAPER listo para abrir"
   );
 
   /*
-    IMPORTANTE:
-    La web propia puede estar en puerto 5500,
-    pero el mixer de REAPER siempre abre por puerto 8080.
+    Espera un instante solo para que se vea el resultado.
+    Luego abre mix.html y le pasa host/puerto.
   */
-  window.setTimeout(() => {
-    window.location.href = getMixerUrl(cleanHost, cleanPort);
-  }, 300);
-}
+window.location.href = getReaperUrl(
+  cleanHost,
+  cleanPort
+);
 
 searchBtn.addEventListener("click", searchLocalNetwork);
 
@@ -430,18 +511,19 @@ portInput.addEventListener("keydown", event => {
   }
 });
 
-window.addEventListener("load", () => {
-  renderSavedServers();
+networkPrefixInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    searchLocalNetwork();
+  }
+});
 
-  /*
-    IMPORTANTE:
-    No usamos location.port porque esta web propia corre por 5500.
-    REAPER usa 8080 por defecto.
-  */
+window.addEventListener("load", () => {
   portInput.value = DEFAULT_REAPER_PORT;
 
+  renderSavedServers();
+
   showEmpty(
-    "Pulsa buscar o escribe la dirección IPv4 de tu PC para conectar con REAPER.",
+    "Escribe el prefijo de tu red y pulsa Buscar REAPER.",
     icons.clock
   );
 });

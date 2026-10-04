@@ -938,3 +938,137 @@ input:focus {
     font-size: 9px;
   }
 }
+
+.network-prefix-field {
+  margin-bottom: 12px;
+}
+
+.network-prefix-field .input-wrap {
+  margin-top: 7px;
+}
+
+.results {
+  min-height: 115px;
+  margin-top: 14px;
+}
+
+.found-station {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(72,221,160,.4);
+  border-radius: 12px;
+  background: rgba(72,221,160,.07);
+}
+
+.found-station-icon {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  color: #052018;
+  background: var(--green);
+  font-weight: 1000;
+}
+
+.found-station-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.found-station-copy strong,
+.found-station-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.found-station-copy strong {
+  color: #fff;
+  font-size: 12px;
+}
+
+.found-station-copy small {
+  margin-top: 3px;
+  color: #a9c4b8;
+  font: 10px Consolas, monospace;
+}
+
+.found-station button {
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #052018;
+  background: var(--green);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.scan-progress {
+  display: grid;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+}
+
+.scan-progress strong {
+  color: #eaf6ff;
+  font-size: 11px;
+}
+
+.scan-progress span {
+  color: var(--muted);
+  font: 10px Consolas, monospace;
+}
+
+.scan-progress-bar {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #06101a;
+}
+
+.scan-progress-bar i {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #168db5, var(--cyan));
+  box-shadow: 0 0 12px rgba(68,217,255,.55);
+}
+
+.scan-button.scanning .scan-icon {
+  display: none;
+}
+
+.scan-button.scanning .spinner {
+  display: inline-block;
+}
+
+.spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(5,32,24,.35);
+  border-top-color: #052018;
+  border-radius: 50%;
+  animation: reaperSpin .75s linear infinite;
+}
+
+@keyframes reaperSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.saved-empty {
+  color: var(--muted);
+  font-size: 10px;
+}
