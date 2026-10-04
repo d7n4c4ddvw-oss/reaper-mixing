@@ -57,9 +57,9 @@
           </h1>
 
           <p>
-            Conecta tu teléfono a la misma red Wi‑Fi que la PC con REAPER.
-            Luego indica la dirección IPv4 de esa computadora para abrir
-            su Web Interface.
+            Agrega la dirección IPv4 de la computadora donde está REAPER.
+            La estación se guardará únicamente en este navegador para que
+            la próxima vez conectes con un toque.
           </p>
 
           <div class="hero-stats">
@@ -97,16 +97,16 @@
             </div>
           </div>
 
-          <span class="radar-label">LOCAL NETWORK CONNECT</span>
+          <span class="radar-label">SAVED LOCAL STATIONS</span>
         </div>
       </section>
 
-      <section class="content-grid">
+      <section class="content-grid manual-only-grid">
         <article class="card">
           <div class="card-title">
             <div>
-              <span class="section-label">AYUDA DE RED</span>
-              <h2>Preparar dirección REAPER</h2>
+              <span class="section-label">CONEXIÓN DIRECTA</span>
+              <h2>Agregar estación REAPER</h2>
             </div>
 
             <div class="port-badge">
@@ -116,74 +116,6 @@
               </svg>
 
               :8080
-            </div>
-          </div>
-
-          <label class="field network-prefix-field">
-            <span>Prefijo de tu red local</span>
-
-            <div class="input-wrap">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
-                <path d="M8.5 16a6 6 0 0 1 7 0"></path>
-                <path d="M12 20h.01"></path>
-              </svg>
-
-              <input
-                id="networkPrefixInput"
-                type="text"
-                value="192.168.100"
-                placeholder="Ejemplo: 192.168.1"
-                autocomplete="off"
-                spellcheck="false"
-              >
-            </div>
-          </label>
-
-          <button class="scan-button" id="searchBtn" type="button">
-            <svg class="scan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="6"></circle>
-              <path d="m16 16 4 4"></path>
-            </svg>
-
-            <span class="spinner"></span>
-
-            <span id="searchText">
-              Usar esta red
-            </span>
-          </button>
-
-          <div class="scan-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
-              <circle cx="12" cy="12" r="9"></circle>
-              <path d="M12 8v4"></path>
-              <path d="M12 16h.01"></path>
-            </svg>
-
-            Chrome no permite buscar todos los equipos del Wi‑Fi desde una
-            página pública. Presiona el botón y completa el último número
-            de la IPv4 en la conexión directa.
-          </div>
-
-          <div class="results" id="results">
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-                <circle cx="12" cy="12" r="8"></circle>
-                <path d="M12 8v4l3 2"></path>
-              </svg>
-
-              <span>
-                Escribe el prefijo de tu red y pulsa Usar esta red.
-              </span>
-            </div>
-          </div>
-        </article>
-
-        <article class="card">
-          <div class="card-title">
-            <div>
-              <span class="section-label">CONEXIÓN DIRECTA</span>
-              <h2>Abrir Web Interface</h2>
             </div>
           </div>
 
@@ -201,7 +133,7 @@
                   <input
                     id="hostInput"
                     type="text"
-                    placeholder="192.168.100.79"
+                    placeholder="Ejemplo: 192.168.100.79"
                     autocomplete="off"
                     spellcheck="false"
                   >
@@ -230,8 +162,18 @@
                 <path d="m13 6 6 6-6 6"></path>
               </svg>
 
-              Abrir REAPER
+              Guardar y abrir REAPER
             </button>
+
+            <div class="scan-note">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 8v4"></path>
+                <path d="M12 16h.01"></path>
+              </svg>
+
+              Conecta el teléfono y la PC con REAPER a la misma red Wi‑Fi.
+            </div>
 
             <div class="divider"></div>
 
@@ -248,18 +190,48 @@
 
               <div class="step">
                 <span class="step-number">3</span>
-                <span>Copia su dirección <code>IPv4</code>.</span>
+                <span>Copia la dirección <code>IPv4</code>.</span>
+              </div>
+
+              <div class="step">
+                <span class="step-number">4</span>
+                <span>Pégala arriba y pulsa <code>Guardar y abrir</code>.</span>
               </div>
             </div>
+          </div>
+        </article>
 
-            <div class="saved-section">
-              <div class="saved-title">ESTACIONES RECIENTES</div>
+        <article class="card saved-card">
+          <div class="card-title">
+            <div>
+              <span class="section-label">ESTE DISPOSITIVO</span>
+              <h2>Estaciones guardadas</h2>
+            </div>
+          </div>
 
-              <div class="saved-list" id="savedList">
-                <span class="saved-empty">
-                  Todavía no hay estaciones guardadas.
-                </span>
-              </div>
+          <p class="saved-description">
+            Estas direcciones solo se guardan en este navegador y este
+            dispositivo. Otro celular tendrá su propia lista.
+          </p>
+
+          <div class="saved-list saved-list-large" id="savedList">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                <circle cx="12" cy="12" r="8"></circle>
+                <path d="M12 8v4l3 2"></path>
+              </svg>
+
+              <span>
+                Todavía no hay estaciones guardadas.
+              </span>
+            </div>
+          </div>
+
+          <div class="results manual-results" id="results">
+            <div class="empty-state">
+              <span>
+                Agrega una estación para abrir REAPER.
+              </span>
             </div>
           </div>
         </article>
