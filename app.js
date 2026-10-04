@@ -173,18 +173,8 @@ function deleteStation(host, port) {
   renderSavedStations();
 }
 
-function setProgress(percent, message) {
-  const safePercent = Math.max(
-    0,
-    Math.min(100, Math.round(percent))
-  );
-
+function setProgress(message) {
   connectProgress.classList.add("active");
-
-  connectProgressFill.style.width = `${safePercent}%`;
-
-  connectProgressPercent.textContent =
-    `${safePercent}%`;
 
   connectProgressText.textContent = message;
 }
@@ -196,10 +186,6 @@ function resetProgress() {
 
   connectProgress.classList.remove("active");
 
-  connectProgressFill.style.width = "0%";
-
-  connectProgressPercent.textContent = "0%";
-
   connectProgressText.textContent =
     "Listo para conectar";
 }
@@ -207,52 +193,29 @@ function resetProgress() {
 function runOpenProgress(onComplete) {
   window.clearInterval(progressTimer);
 
-  let progress = 0;
+  const messages = [
+    "Guardando estación en este dispositivo…",
+    "Preparando Web Interface de REAPER…",
+    "Abriendo conexión local…",
+    "REAPER listo. Abriendo…"
+  ];
 
-  setProgress(
-    progress,
-    "Guardando estación en este dispositivo…"
-  );
+  let step = 0;
+
+  setProgress(messages[step]);
 
   progressTimer = window.setInterval(() => {
-    progress += 8;
+    step += 1;
 
-    if (progress < 35) {
-      setProgress(
-        progress,
-        "Guardando estación en este dispositivo…"
-      );
-
-      return;
-    }
-
-    if (progress < 70) {
-      setProgress(
-        progress,
-        "Preparando Web Interface de REAPER…"
-      );
-
-      return;
-    }
-
-    if (progress < 100) {
-      setProgress(
-        progress,
-        "Abriendo conexión local…"
-      );
-
+    if (step < messages.length) {
+      setProgress(messages[step]);
       return;
     }
 
     window.clearInterval(progressTimer);
 
-    setProgress(
-      100,
-      "REAPER listo. Abriendo…"
-    );
-
     window.setTimeout(onComplete, 250);
-  }, 85);
+  }, 350);
 }
 
 function renderSavedStations() {
