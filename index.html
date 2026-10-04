@@ -57,8 +57,9 @@
           </h1>
 
           <p>
-            Busca la computadora que tiene REAPER dentro de tu Wi‑Fi local.
-            Luego conecta el mixer remoto mediante su dirección IPv4.
+            Conecta tu teléfono a la misma red Wi‑Fi que la PC con REAPER.
+            Luego indica la dirección IPv4 de esa computadora para abrir
+            su Web Interface.
           </p>
 
           <div class="hero-stats">
@@ -96,7 +97,7 @@
             </div>
           </div>
 
-          <span class="radar-label">LOCAL NETWORK SCAN</span>
+          <span class="radar-label">LOCAL NETWORK CONNECT</span>
         </div>
       </section>
 
@@ -104,8 +105,8 @@
         <article class="card">
           <div class="card-title">
             <div>
-              <span class="section-label">DETECCIÓN AUTOMÁTICA</span>
-              <h2>Buscar estación REAPER</h2>
+              <span class="section-label">AYUDA DE RED</span>
+              <h2>Preparar dirección REAPER</h2>
             </div>
 
             <div class="port-badge">
@@ -148,7 +149,7 @@
             <span class="spinner"></span>
 
             <span id="searchText">
-              Buscar REAPER en la red local
+              Usar esta red
             </span>
           </button>
 
@@ -159,8 +160,9 @@
               <path d="M12 16h.01"></path>
             </svg>
 
-            El celular y la PC con REAPER deben usar la misma Wi‑Fi.
-            Si Chrome pregunta por red local, pulsa Permitir.
+            Chrome no permite buscar todos los equipos del Wi‑Fi desde una
+            página pública. Presiona el botón y completa el último número
+            de la IPv4 en la conexión directa.
           </div>
 
           <div class="results" id="results">
@@ -171,7 +173,7 @@
               </svg>
 
               <span>
-                Escribe el prefijo de tu red y pulsa Buscar.
+                Escribe el prefijo de tu red y pulsa Usar esta red.
               </span>
             </div>
           </div>
@@ -181,14 +183,14 @@
           <div class="card-title">
             <div>
               <span class="section-label">CONEXIÓN DIRECTA</span>
-              <h2>Agregar estación manualmente</h2>
+              <h2>Abrir Web Interface</h2>
             </div>
           </div>
 
           <div class="connection-flow">
             <div class="manual-form">
               <label class="field">
-                <span>Dirección IP o nombre del PC</span>
+                <span>Dirección IPv4 de la PC</span>
 
                 <div class="input-wrap">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -228,7 +230,7 @@
                 <path d="m13 6 6 6-6 6"></path>
               </svg>
 
-              Conectar a REAPER
+              Abrir REAPER
             </button>
 
             <div class="divider"></div>
@@ -236,7 +238,7 @@
             <div class="steps">
               <div class="step">
                 <span class="step-number">1</span>
-                <span>En Windows abre <code>CMD</code>.</span>
+                <span>En la PC con REAPER abre <code>CMD</code>.</span>
               </div>
 
               <div class="step">
@@ -246,7 +248,7 @@
 
               <div class="step">
                 <span class="step-number">3</span>
-                <span>Usa la dirección <code>IPv4</code> de tu PC.</span>
+                <span>Copia su dirección <code>IPv4</code>.</span>
               </div>
             </div>
 
