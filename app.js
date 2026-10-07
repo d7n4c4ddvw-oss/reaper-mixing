@@ -1,316 +1,39 @@
-const DEFAULT_REAPER_PORT = 8080;
-const STORAGE_KEY = "multitracks-remote-reaper-hosts";
-
-const hostInput = document.getElementById("hostInput");
-const portInput = document.getElementById("portInput");
-
-const connectBtn = document.getElementById("connectBtn");
-const connectButtonText = document.getElementById(
-  "connectButtonText"
-);
-
-const connectionStatus = document.getElementById(
-  "connectionStatus"
-);
-
-const connectionStatusText = document.getElementById(
-  "connectionStatusText"
-);
-
-const savedList = document.getElementById("savedList");
-
-const icons = {
-  check: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
-      <path d="m5 12 4 4L19 6"></path>
-    </svg>
-  `,
-
-  trash: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 7h16"></path>
-      <path d="M10 11v6"></path>
-      <path d="M14 11v6"></path>
-      <path d="M9 7V4h6v3"></path>
-      <path d="M6 7l1 14h10l1-14"></path>
-    </svg>
-  `,
-
-  computer: `
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
-      <rect x="3" y="4" width="18" height="13" rx="2"></rect>
-      <path d="M8 21h8"></path>
-      <path d="M12 17v4"></path>
-    </svg>
-  `
-};
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[char]);
+(()=>{
+'use strict';
+const KEY='multitracks-remote-reaper-hosts', $=id=>document.getElementById(id);
+let editing=null,stations=[];
+function message(t,type=''){ $('status').textContent=t;$('status').className=type; }
+function ipv4(h){const p=h.split('.');return p.length===4&&p.every(v=>/^\d{1,3}$/.test(v)&&Number(v)<=255);}
+function normalize(s){
+ if(!s||typeof s!=='object')throw Error('Dispositivo no válido');
+ const host=String(s.host||'').trim();const port=Number(s.port);
+ if(!ipv4(host)||!Number.isInteger(port)||port<1||port>65535)throw Error('IP o puerto no válido');
+ let route=String(s.route||'').trim();if(route&&!route.startsWith('/'))route='/'+route;
+ if(route.startsWith('//')||/[\s\\\x00-\x1f]/.test(route))throw Error('Ruta no válida');
+ return {host,port,route,name:String(s.name||host).trim().slice(0,80)||host,favorite:Boolean(s.favorite),lastUsed:Math.max(0,Number(s.lastUsed)||0)};
 }
-
-function normalizeHost(value) {
-  return String(value || "")
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/.*$/, "")
-    .replace(/:\d+$/, "");
+function id(s){return s.host+':'+s.port+(s.route||'');}
+function read(){try{const raw=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(raw))raw.forEach(s=>{try{const v=normalize(s);if(!stations.some(x=>id(x)===id(v)))stations.push(v);}catch{}});}catch{message('No se pudieron leer los dispositivos guardados.','error');}}
+function store(){try{localStorage.setItem(KEY,JSON.stringify(stations));return true;}catch{message('El navegador no permitió guardar. Exporta un respaldo.','error');return false;}}
+function values(){return normalize({name:$('name').value,host:$('host').value,port:$('port').value,route:$('route').value,favorite:$('favorite').checked});}
+function fill(s){editing=id(s);$('name').value=s.name;$('host').value=s.host;$('port').value=s.port;$('route').value=s.route||'';$('favorite').checked=s.favorite;message('Editando: '+s.name);$('name').focus();}
+function reset(){editing=null;$('form').reset();$('port').value=8080;message('Nuevo dispositivo.');}
+function saveCurrent(){const s=values();const existing=stations.find(x=>id(x)===id(s)||id(x)===editing);s.lastUsed=existing?existing.lastUsed:0;stations=stations.filter(x=>id(x)!==editing&&id(x)!==id(s));stations.unshift(s);editing=id(s);store();render();return s;}
+function open(s){s.lastUsed=Date.now();store();message('Abriendo '+s.name+'…','success');location.href='http://'+s.host+':'+s.port+(s.route||'');}
+function button(text,title,fn,cls=''){const b=document.createElement('button');b.type='button';b.textContent=text;b.title=title;b.className=cls;b.onclick=fn;return b;}
+function render(){
+ $('count').textContent=stations.length;
+ const term=$('search').value.toLowerCase().trim(),order=$('sort').value;
+ const list=stations.filter(s=>(s.name+' '+s.host+':'+s.port).toLowerCase().includes(term)).sort((a,b)=>order==='name'?a.name.localeCompare(b.name):order==='favorite'?(Number(b.favorite)-Number(a.favorite)||a.name.localeCompare(b.name)):b.lastUsed-a.lastUsed);
+ const root=$('devices');root.replaceChildren();
+ if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent=stations.length?'No hay resultados para esa búsqueda.':'Sin dispositivos guardados. Añade tu primera estación.';root.append(e);return;}
+ list.forEach(s=>{const card=document.createElement('article');card.className='device'+(s.favorite?' favorite':'');const info=document.createElement('div');const title=document.createElement('h3');title.textContent=s.name;const address=document.createElement('div');address.className='address';address.textContent=s.host+':'+s.port+(s.route||'');const used=document.createElement('div');used.className='used';used.textContent=s.lastUsed?'Última apertura: '+new Date(s.lastUsed).toLocaleString():'Todavía no abierto desde este panel';info.append(title,address,used);const actions=document.createElement('div');actions.className='device-actions';actions.append(button('▶ Abrir','Abrir '+s.name,()=>open(s),'open'),button(s.favorite?'★':'☆','Cambiar favorito',()=>{s.favorite=!s.favorite;store();render();}),button('Editar','Editar dispositivo',()=>fill(s)),button('✕','Eliminar dispositivo',()=>{if(!confirm('¿Eliminar "'+s.name+'" de los guardados?'))return;stations=stations.filter(x=>id(x)!==id(s));store();render();if(editing===id(s))reset();}));card.append(info,actions);root.append(card);});
 }
-
-function normalizePort(value) {
-  const port = Number(value);
-
-  if (
-    !Number.isInteger(port) ||
-    port < 1 ||
-    port > 65535
-  ) {
-    return DEFAULT_REAPER_PORT;
-  }
-
-  return port;
-}
-
-function isValidIPv4(host) {
-  const parts = String(host).split(".");
-
-  if (parts.length !== 4) {
-    return false;
-  }
-
-  return parts.every(part => {
-    if (!/^\d{1,3}$/.test(part)) {
-      return false;
-    }
-
-    const number = Number(part);
-
-    return number >= 0 && number <= 255;
-  });
-}
-
-function setStatus(message, type = "") {
-  connectionStatus.className =
-    `connection-status ${type}`.trim();
-
-  connectionStatusText.textContent = message;
-}
-
-function resetStatus() {
-  setStatus("Listo para conectar");
-}
-
-function getStations() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const stations = JSON.parse(raw || "[]");
-
-    if (!Array.isArray(stations)) {
-      return [];
-    }
-
-    return stations.filter(station => {
-      return station &&
-        typeof station.host === "string" &&
-        Number.isFinite(Number(station.port));
-    });
-  } catch {
-    return [];
-  }
-}
-
-function setStations(stations) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(stations)
-  );
-}
-
-function saveStation(host, port) {
-  const cleanHost = normalizeHost(host);
-  const cleanPort = normalizePort(port);
-  const stationId = `${cleanHost}:${cleanPort}`;
-
-  const stations = getStations()
-    .filter(station => {
-      return `${station.host}:${station.port}` !== stationId;
-    });
-
-  stations.unshift({
-    host: cleanHost,
-    port: cleanPort,
-    lastUsed: Date.now()
-  });
-
-  setStations(stations.slice(0, 10));
-
-  renderSavedStations();
-}
-
-function deleteStation(host, port) {
-  const cleanHost = normalizeHost(host);
-  const cleanPort = normalizePort(port);
-  const stationId = `${cleanHost}:${cleanPort}`;
-
-  const stations = getStations()
-    .filter(station => {
-      return `${station.host}:${station.port}` !== stationId;
-    });
-
-  setStations(stations);
-
-  renderSavedStations();
-}
-
-function renderSavedStations() {
-  const stations = getStations();
-
-  if (!stations.length) {
-    savedList.innerHTML = `
-      <div class="empty-state">
-        ${icons.computer}
-        <span>Todavía no hay sesiones guardadas.</span>
-      </div>
-    `;
-
-    return;
-  }
-
-  savedList.innerHTML = stations.map(station => `
-    <div class="saved-station-row">
-      <button
-        class="saved-station-connect"
-        type="button"
-        data-host="${escapeHTML(station.host)}"
-        data-port="${station.port}"
-        title="Abrir REAPER en ${escapeHTML(station.host)}:${station.port}"
-      >
-        ${icons.check}
-        <span>${escapeHTML(station.host)}:${station.port}</span>
-      </button>
-
-      <button
-        class="saved-station-delete"
-        type="button"
-        data-host="${escapeHTML(station.host)}"
-        data-port="${station.port}"
-        title="Eliminar estación"
-      >
-        ${icons.trash}
-      </button>
-    </div>
-  `).join("");
-
-  savedList
-    .querySelectorAll(".saved-station-connect")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        openReaper(
-          button.dataset.host,
-          button.dataset.port
-        );
-      });
-    });
-
-  savedList
-    .querySelectorAll(".saved-station-delete")
-    .forEach(button => {
-      button.addEventListener("click", event => {
-        event.stopPropagation();
-
-        deleteStation(
-          button.dataset.host,
-          button.dataset.port
-        );
-      });
-    });
-}
-
-function openReaper(host, port) {
-  const cleanHost = normalizeHost(host);
-  const cleanPort = normalizePort(port);
-
-  if (!isValidIPv4(cleanHost)) {
-    hostInput.focus();
-
-    setStatus(
-      "Escribe una IPv4 válida. Ejemplo: 192.168.100.79",
-      "error"
-    );
-
-    return;
-  }
-
-  const reaperUrl =
-    `http://${cleanHost}:${cleanPort}`;
-
-  saveStation(cleanHost, cleanPort);
-
-  hostInput.value = cleanHost;
-  portInput.value = cleanPort;
-
-  connectBtn.disabled = true;
-
-  connectButtonText.textContent =
-    "Abriendo REAPER…";
-
-  setStatus(
-    "Conexión guardada. Abriendo REAPER…",
-    "active"
-  );
-
-  /*
-    Navegación directa: funciona desde celular si esta IP ya abre
-    manualmente en Chrome.
-  */
-  window.location.href = reaperUrl;
-}
-
-connectBtn.addEventListener("click", () => {
-  openReaper(
-    hostInput.value,
-    portInput.value
-  );
-});
-
-hostInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    openReaper(
-      hostInput.value,
-      portInput.value
-    );
-  }
-});
-
-portInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    openReaper(
-      hostInput.value,
-      portInput.value
-    );
-  }
-});
-
-window.addEventListener("pageshow", () => {
-  connectBtn.disabled = false;
-
-  connectButtonText.textContent =
-    "Guardar y abrir REAPER";
-
-  resetStatus();
-
-  renderSavedStations();
-});
-
-window.addEventListener("load", () => {
-  portInput.value = DEFAULT_REAPER_PORT;
-
-  resetStatus();
-  renderSavedStations();
-});
+$('form').onsubmit=e=>{e.preventDefault();try{open(saveCurrent());}catch(err){message(err.message,'error');}};
+$('save').onclick=()=>{try{const s=saveCurrent();message('Dispositivo guardado: '+s.name,'success');}catch(e){message(e.message,'error');}};
+$('clear').onclick=reset;$('search').oninput=render;$('sort').onchange=render;
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,devices:stations},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='multitracks-dispositivos.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);message('Respaldo exportado.','success');};
+$('import').onclick=()=>$('importFile').click();
+$('importFile').onchange=async()=>{const f=$('importFile').files[0];if(!f)return;try{if(f.size>1000000)throw Error('Respaldo demasiado grande');const raw=JSON.parse(await f.text());const list=Array.isArray(raw)?raw:raw.devices;if(!Array.isArray(list)||list.length>500)throw Error('Formato de respaldo no válido');const imported=list.map(normalize);let count=0;imported.forEach(s=>{if(!stations.some(x=>id(x)===id(s))){stations.push(s);count++;}});store();render();message(count+' dispositivos añadidos. Los existentes se conservaron.','success');}catch(e){message('Importación: '+e.message,'error');}finally{$('importFile').value='';}};
+window.addEventListener('pageshow',()=>{render();});read();render();
+})();
